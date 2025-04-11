@@ -19,26 +19,57 @@ const io = new Server(server, {
 
 let agents = [];
 
+const assignTaskToAgent = (socket) => {
+    const tasks = [
+        'Fetch weather data',
+        'Fetch latest news',
+        'Analyze stock market',
+        'Scrape a website'
+    ];
+
+const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
+
+socket.emit('task', randomTask);
+console.log('🛠️ Task assigned:', randomTask, 'to agent:', socket.id);
+
+const agent = agents.find(a => a.id === socket.id);
+if (agent) {
+    agent.busy = true;
+
+    }
+}
+
 io.on('connection', (socket) => {
     console.log('New Agent Connected:', socket.id);
 
-    agents.push(socket.id);
-
-
-    socket.emit('task', 'Fetch weather data');
-    console.log('🔧 Task assigned to agent:', socket.id)
-
-
-      socket.on('taskCompleted', (result) => {
-        console.log('Task completed by agent:', socket.id, 'Result:', result);
+    agents.push({
+      id: socket.id,
+      busy: false,
     });
 
+    assignTaskToAgent(socket);
 
+
+    socket.on('taskCompleted', (result) => {
+        console.log("Task Completed by Agent: " , socket.id, "Result: ", result);
+
+
+        const agent = agents.find(a => a.id === socket.id);
+        if(agent) {
+        agent.busy = false;
+        }
+    })
 
 
     socket.on('disconnect', () => {
         console.log('Agent Disconnected:', socket.id);
+
+        agents = agents.filter(agent => agent.id !== socket.id);
     });
+
+
+    
+    
 });
 
 
